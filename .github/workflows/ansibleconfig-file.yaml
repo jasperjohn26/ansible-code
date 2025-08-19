@@ -1,0 +1,50 @@
+on:
+  workflow_dispatch:
+
+jobs:
+  generate-ansible-cfg:
+    runs-on: [ ansible-master ]
+
+    steps:
+
+    
+
+      - name: Generate ansible.cfg
+        run: |
+          sudo -u jasper bash -c 'cat > /home/jasper/ansible/ansible.cfg' << 'EOF'
+          [defaults]
+          inventory      = /home/jasper/ansible/inventory.yaml
+          roles_path    = /home/jasper/ansible/roles
+          host_key_checking = False
+          remote_user = jasper
+          private_key_file = /home/jasper/.ssh/id_rsa
+          log_path = /home/jasper/ansible/ansible.log
+          forks = 5
+          gathering = smart
+          fact_caching = jsonfile
+          fact_caching_connection = /home/jasper/ansible/facts_cache
+          
+
+          [privilege_escalation]
+          become = True
+          become_method = sudo
+          become_user = root
+          become_ask_pass = False
+
+          [ssh_connection]
+          ssh_args = -o ControlMaster=auto -o ControlPersist=60s -o ConnectTimeout=10
+          control_path = /home/jasper/.ssh/id_rsa-%%r@%%h:%%p
+          EOF
+          
+
+      - name: Set proper permissions
+        run: |
+          sudo chown jasper:jasper /home/jasper/ansible/ansible.cfg
+          sudo chmod 644 /home/jasper/ansible/ansible.cfg
+
+      - name: Verify configuration
+        run: |
+          echo "Ansible configuration:"
+          sudo -u jasper ls -la /home/jasper/ansible/ansible.cfg
+          echo -e "\nContents:"
+          sudo -u jasper cat /home/jasper/ansible/ansible.cfg
